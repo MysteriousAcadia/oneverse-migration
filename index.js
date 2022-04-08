@@ -27,7 +27,6 @@ const main = async ()=>{
     const [provider, stakingContract] = await setupMultiCallContract(STAKING_ADDRESS,stakingAbi);
     const [_, moleculesContract] = await setupMultiCallContract(MOLECULES_ADDRESS,nftAbi);
     const [__, puffsContract] = await setupMultiCallContract(PUFFS_ADDRESS,nftAbi);
-    const [t1,t2]  = await provider?.all([moleculesContract?.ownerOf("1"),puffsContract?.ownerOf("1")]);
     const moleculeTokenIds = Array.from({length:2222},(v,k)=>k+1);
     const moleculesJson = {}
     for (let i = 0; i < moleculeTokenIds?.length; i += 1000) {
@@ -54,7 +53,6 @@ const main = async ()=>{
             }
         })
     }
-    console.log(listOfStakedNFTs)
     for(let i =0;i<listOfStakedNFTs?.length;i+=1000){
         const tokens = listOfStakedNFTs.slice(i, i + 1000);
         const results = await provider?.all(tokens.map(e=>stakingContract?.stakedTokens(e.toString())));
@@ -67,9 +65,33 @@ const main = async ()=>{
         if(err) console.log('error', err);
       });
 
+}
+const summary = async ()=>{
+    const moleculeData = require("./moleculeData.json");
+    const puffsData = require("./puffsData.json");
+    const allAddresses = {};
+    Object.keys(moleculeData)?.map((tokenId)=>{
+        const address = moleculeData[tokenId];
+        if(allAddresses[address]){
+            allAddresses[address]["molecule"] +=1; 
+        }
+        else{
+            allAddresses[address]={"molecule":1,"puffs":0};
+        }
+    });
 
-
-
-
+    Object.keys(puffsData)?.map((tokenId)=>{
+        const address = puffsData[tokenId];
+        if(allAddresses[address]){
+            allAddresses[address]["puffs"] +=1; 
+        }
+        else{
+            allAddresses[address]={"molecule":0,"puffs":1};
+        }
+    });
+    fs.writeFile("ownerTokens.json",JSON.stringify(allAddresses),function(err, result) {
+        if(err) console.log('error', err);
+      });
 }
 main()
+// summary()
